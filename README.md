@@ -13,7 +13,7 @@ A FastAPI-based backend application that integrates with OpenAI's GPT-3.5-turbo 
 ## Project Structure
 
 ```
-ai-api-integration-backend/
+Workiva-Backend-Assessment/
 ├── config/
 │   └── settings.py          # Application configuration
 ├── controllers/
@@ -32,6 +32,7 @@ ai-api-integration-backend/
 ├── main.py                  # FastAPI application entry point
 ├── requirements.txt         # Python dependencies
 ├── env.example             # Environment variables template
+├── test_api.sh             # API testing script
 └── README.md               # This file
 ```
 
@@ -41,18 +42,24 @@ ai-api-integration-backend/
 
 - Python 3.8 or higher
 - OpenAI API key (sign up at https://platform.openai.com/)
+- Git (for version control)
 
 ### 1. Clone the Repository
 
 ```bash
-git clone <your-repository-url>
-cd ai-api-integration-backend
+# Clone from GitHub
+git clone https://github.com/SuhasMaddi29/Workiva-Backend-Assessment.git
+
+cd Workiva-Backend-Assessment
 ```
 
 ### 2. Create Virtual Environment
 
 ```bash
-python -m venv venv
+# Verify Python version (should be 3.8+)
+python3 --version
+
+python3 -m venv venv
 
 # On Windows
 venv\Scripts\activate
@@ -98,6 +105,14 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 The server will start on `http://localhost:8000`
+
+## Git Repository
+
+This project is version-controlled with Git. The repository includes:
+
+- **Initial commit**: Complete project structure with all features
+- **Proper .gitignore**: Excludes sensitive files (.env, database files, cache, etc.)
+- **Clean history**: Well-organized commit structure
 
 ## API Endpoints
 
