@@ -15,7 +15,7 @@ router = APIRouter()
 async def get_ai_controller(request: Request) -> AIController:
     """Dependency to get AI controller with services."""
     try:
-        openai_service = OpenAIService()
+        openai_service = request.app.state.openai_service
         db_service = request.app.state.db_service
         return AIController(openai_service, db_service)
     except Exception as e:
@@ -195,7 +195,7 @@ async def health_check(request: Request):
     Returns the current status of the API, including OpenAI configuration status.
     """
     try:
-        openai_service = OpenAIService()
+        openai_service = request.app.state.openai_service
         db_service = request.app.state.db_service
         
         config_status = openai_service.get_configuration_status()

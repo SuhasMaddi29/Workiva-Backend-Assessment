@@ -17,9 +17,16 @@ load_dotenv()
 setup_logging()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    from services.openai_service import OpenAIService
+    
     db_service = DatabaseService()
     await db_service.init_db()
+    
+    # Initialize shared OpenAI service instance
+    openai_service = OpenAIService()
+    
     app.state.db_service = db_service
+    app.state.openai_service = openai_service
     yield
     await db_service.close()
 app = FastAPI(

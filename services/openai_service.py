@@ -32,6 +32,12 @@ class OpenAIService:
         
         self.total_tokens_used = 0
         self.request_count = 0
+        
+        # Separate tracking for user vs system requests
+        self.user_requests = 0
+        self.user_tokens_used = 0
+        self.system_requests = 0
+        self.system_tokens_used = 0
     
     @retry(
         stop=stop_after_attempt(3),
@@ -39,7 +45,7 @@ class OpenAIService:
         retry=retry_if_exception_type((APITimeoutError, APIConnectionError)),
         reraise=True
     )
-    async def generate_response(self, prompt: str) -> str:
+    async def generate_response(self, prompt: str, is_user_request: bool = True) -> str:
         """
         Generate a response using OpenAI's GPT model with comprehensive error handling.
         
@@ -59,6 +65,12 @@ class OpenAIService:
         try:
             logger.info(f"Sending request to OpenAI API with prompt length: {len(prompt)}")
             self.request_count += 1
+            
+            # Track user vs system requests
+            if is_user_request:
+                self.user_requests += 1
+            else:
+                self.system_requests += 1
             
             response = await self.client.chat.completions.create(
                 model=self.model,
@@ -92,8 +104,17 @@ class OpenAIService:
                 raise RuntimeError("Empty response content from OpenAI API")
             
             if hasattr(response, 'usage') and response.usage:
-                self.total_tokens_used += response.usage.total_tokens
-                logger.info(f"Token usage - Prompt: {response.usage.prompt_tokens}, "
+                tokens_used = response.usage.total_tokens
+                self.total_tokens_used += tokens_used
+                
+                # Track tokens by request type
+                if is_user_request:
+                    self.user_tokens_used += tokens_used
+                else:
+                    self.system_tokens_used += tokens_used
+                
+                request_type = "user" if is_user_request else "system"
+                logger.info(f"Token usage ({request_type}) - Prompt: {response.usage.prompt_tokens}, "
                           f"Completion: {response.usage.completion_tokens}, "
                           f"Total: {response.usage.total_tokens}")
             
@@ -150,12 +171,21 @@ class OpenAIService:
             Dictionary with validation results
         """
         try:
+            self.request_count += 1
+            self.system_requests += 1  # API validation is a system request
+            
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[{"role": "user", "content": "Hi"}],
                 max_tokens=5,
                 timeout=10.0
             )
+            
+            if hasattr(response, 'usage') and response.usage:
+                tokens_used = response.usage.total_tokens
+                self.total_tokens_used += tokens_used
+                self.system_tokens_used += tokens_used  # Track as system tokens
+                logger.info(f"API validation token usage (system): {tokens_used}")
             
             return {
                 "valid": True,
@@ -179,10 +209,16 @@ class OpenAIService:
             }
     
     def get_usage_stats(self) -> Dict[str, Any]:
-        """Get current usage statistics."""
+        """Get current usage statistics with separate tracking for user and system requests."""
         return {
+            "user_requests": self.user_requests,
+            "user_tokens_used": self.user_tokens_used,
+            "system_requests": self.system_requests,
+            "system_tokens_used": self.system_tokens_used,
             "total_requests": self.request_count,
             "total_tokens_used": self.total_tokens_used,
+            "average_tokens_per_user_request": round(self.user_tokens_used / max(self.user_requests, 1), 2),
+            "average_tokens_per_system_request": round(self.system_tokens_used / max(self.system_requests, 1), 2),
             "average_tokens_per_request": round(self.total_tokens_used / max(self.request_count, 1), 2),
             "configuration": {
                 "model": self.model,

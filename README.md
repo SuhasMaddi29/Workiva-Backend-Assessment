@@ -170,6 +170,24 @@ chmod +x test_api.sh
 
 The test script will automatically check if the server is running and guide you if it's not.
 
+### Using Postman Collection
+
+For a more comprehensive testing experience, import the Workiva AI API Backend Postman collection:
+
+1. **Get Collection**: Visit [Postman Collection](https://api.postman.com/collections/34473097-63c44779-ace5-4006-84a0-0942fd7776de?access_key=PMAT-01JXZPBZQA5XYQ5H9R5JSZP0NE)
+2. **Copy Collection**: Copy the entire JSON content from the webpage
+3. **Import to Postman**: 
+   - Open Postman → Import → Raw text
+   - Paste the copied JSON content
+   - Click "Continue" then "Import"
+4. **Set Base URL**: The collection defaults to `http://localhost:8000` (modify if needed)
+5. **Start Server**: Ensure your server is running with `uvicorn main:app --reload`
+6. **Run Tests**: Execute individual requests or run the entire collection
+
+**Collection Features:**
+- **Organized by Category**: AI endpoints, conversation management, health checks
+- **Example Responses**: Pre-recorded responses showing actual API behavior
+
 ## Request/Response Examples
 
 ### POST /api/ask-ai
@@ -248,9 +266,15 @@ The test script will automatically check if the server is running and guide you 
       "message": "Database is accessible"
     },
     "usage_statistics": {
-      "total_requests": 15,
-      "total_tokens_used": 1250,
-      "average_tokens_per_request": 83.33,
+      "user_requests": 4,
+      "user_tokens_used": 1041,
+      "system_requests": 6,
+      "system_tokens_used": 78,
+      "total_requests": 10,
+      "total_tokens_used": 1119,
+      "average_tokens_per_user_request": 260.25,
+      "average_tokens_per_system_request": 13.0,
+      "average_tokens_per_request": 111.9,
       "configuration": {
         "model": "gpt-3.5-turbo",
         "max_tokens": 1000,
@@ -263,12 +287,73 @@ The test script will automatically check if the server is running and guide you 
 }
 ```
 
+### GET /api/health?validate_api=true
+
+**Success Response (200):**
+```json
+{
+  "status": "healthy",
+  "message": "API is operational",
+  "openai_configured": true,
+  "timestamp": "2024-01-15T10:30:45.123456",
+  "details": {
+    "openai_configuration": {
+      "api_key_configured": true,
+      "api_key_format_valid": true,
+      "model": "gpt-3.5-turbo",
+      "max_tokens": 1000,
+      "temperature": 0.7,
+      "timeout": 30.0,
+      "advanced_parameters": {
+        "top_p": 1.0,
+        "frequency_penalty": 0.0,
+        "presence_penalty": 0.0
+      }
+    },
+    "database_status": {
+      "connected": true,
+      "conversation_count": 3,
+      "message": "Database is accessible"
+    },
+    "usage_statistics": {
+      "user_requests": 4,
+      "user_tokens_used": 1041,
+      "system_requests": 6,
+      "system_tokens_used": 78,
+      "total_requests": 10,
+      "total_tokens_used": 1119,
+      "average_tokens_per_user_request": 260.25,
+      "average_tokens_per_system_request": 13.0,
+      "average_tokens_per_request": 111.9,
+      "configuration": {
+        "model": "gpt-3.5-turbo",
+        "max_tokens": 1000,
+        "temperature": 0.7,
+        "timeout": 30.0
+      }
+    },
+    "api_validation": {
+        "valid": true,
+        "model_available": true,
+        "model": "gpt-3.5-turbo",
+        "message": "API key is valid and model is accessible"
+    }
+  }
+}
+```
+
 **Health Check Features:**
 - **System Status**: Overall health indicator (healthy/degraded)
 - **OpenAI Configuration**: Detailed configuration and API key validation
 - **Database Status**: Connection status and conversation count
-- **Usage Statistics**: Request counts, token usage, and performance metrics
+- **Usage Statistics**: Separated tracking of user vs system requests with detailed metrics
 - **Optional API Validation**: Add `?validate_api=true` to test API key connectivity
+
+**Usage Statistics Breakdown:**
+- **User Requests**: Actual AI interactions via `/api/ask-ai` endpoint
+- **System Requests**: Internal operations like health check API validations
+- **Token Tracking**: Separate token consumption tracking for cost analysis
+- **Performance Metrics**: Individual and combined averages for monitoring
 
 ## Error Handling & Validation
 
