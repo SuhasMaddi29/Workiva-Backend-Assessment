@@ -13,22 +13,15 @@ from services.database_service import DatabaseService
 from utils.logging_config import setup_logging
 from config.settings import settings
 
-# Load environment variables and setup logging
 load_dotenv()
 setup_logging()
-
-# Initialize database
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
     db_service = DatabaseService()
     await db_service.init_db()
     app.state.db_service = db_service
     yield
-    # Shutdown
     await db_service.close()
-
-# Create FastAPI app
 app = FastAPI(
     title="AI API Integration Backend",
     description="Backend assessment for AI API integration with OpenAI GPT-3.5",
@@ -36,7 +29,6 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Global exception handlers
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """Handle FastAPI validation errors with detailed messages."""
@@ -45,8 +37,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         field = ".".join(str(loc) for loc in error.get('loc', []))
         message = error.get('msg', 'Validation error')
         error_type = error.get('type', 'unknown')
-        
-        # Provide user-friendly messages for common validation errors
         if error_type == 'value_error.missing':
             user_message = f"Field '{field}' is required"
         elif error_type == 'value_error.any_str.min_length':
@@ -85,8 +75,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 async def value_error_handler(request: Request, exc: ValueError):
     """Handle ValueError exceptions with user-friendly messages."""
     error_msg = str(exc)
-    
-    # Determine error code based on the error message
     if "empty" in error_msg.lower() or "whitespace" in error_msg.lower():
         error_code = "EMPTY_INPUT"
         suggestions = ["Provide a non-empty input", "Ensure your input contains actual content"]
@@ -108,16 +96,13 @@ async def value_error_handler(request: Request, exc: ValueError):
         }
     )
 
-# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify actual origins
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Include routers
 app.include_router(ai_router, prefix="/api", tags=["AI"])
 app.include_router(conversation_router, prefix="/api", tags=["Conversations"])
 
@@ -125,16 +110,7 @@ app.include_router(conversation_router, prefix="/api", tags=["Conversations"])
 async def root():
     """Root endpoint returning basic API information."""
     return {
-        "message": "AI API Integration Backend",
+        "message": "Workiva AI API Integration Backend",
         "version": "1.0.0",
         "status": "running"
     }
-
-@app.get("/health", tags=["Health"])
-async def health_check():
-    """Health check endpoint."""
-    return {
-        "status": "OK",
-        "message": "AI API Integration Backend is running",
-        "openai_configured": bool(os.getenv("OPENAI_API_KEY"))
-    } 

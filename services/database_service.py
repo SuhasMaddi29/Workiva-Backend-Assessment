@@ -36,8 +36,8 @@ class DatabaseService:
         """Initialize the database and create tables if they don't exist."""
         try:
             self.connection = await aiosqlite.connect(self.db_path)
-            await self.connection.execute("PRAGMA journal_mode=WAL")  # Enable Write-Ahead Logging
-            await self.connection.execute("PRAGMA synchronous=NORMAL")  # Improve write performance
+            await self.connection.execute("PRAGMA journal_mode=WAL")
+            await self.connection.execute("PRAGMA synchronous=NORMAL")
             await self.connection.execute("""
                 CREATE TABLE IF NOT EXISTS conversations (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -147,12 +147,9 @@ class DatabaseService:
                 count = result[0] if result else 0
                 
                 if count > 0:
-                    # Begin transaction
                     await conn.execute("BEGIN TRANSACTION")
                     try:
-                        # Delete all conversations
                         await conn.execute("DELETE FROM conversations")
-                        # Reset the auto-increment counter
                         await conn.execute("DELETE FROM sqlite_sequence WHERE name='conversations'")
                         await conn.commit()
                         logger.info(f"Cleared {count} conversations from database")

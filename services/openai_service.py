@@ -17,7 +17,6 @@ class OpenAIService:
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY environment variable is required")
         
-        # Validate API key format (should start with 'sk-')
         if not self.api_key.startswith('sk-'):
             logger.warning("API key format may be invalid - should start with 'sk-'")
         
@@ -27,12 +26,10 @@ class OpenAIService:
         self.temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.7"))
         self.timeout = float(os.getenv("OPENAI_TIMEOUT", "30.0"))
         
-        # Additional configuration options
         self.top_p = float(os.getenv("OPENAI_TOP_P", "1.0"))
         self.frequency_penalty = float(os.getenv("OPENAI_FREQUENCY_PENALTY", "0.0"))
         self.presence_penalty = float(os.getenv("OPENAI_PRESENCE_PENALTY", "0.0"))
         
-        # Usage tracking
         self.total_tokens_used = 0
         self.request_count = 0
     
@@ -94,7 +91,6 @@ class OpenAIService:
             if not ai_response:
                 raise RuntimeError("Empty response content from OpenAI API")
             
-            # Track usage if available
             if hasattr(response, 'usage') and response.usage:
                 self.total_tokens_used += response.usage.total_tokens
                 logger.info(f"Token usage - Prompt: {response.usage.prompt_tokens}, "
@@ -110,7 +106,6 @@ class OpenAIService:
         
         except RateLimitError as e:
             logger.error(f"OpenAI rate limit error: {str(e)}")
-            # Extract rate limit details if available
             error_details = str(e)
             if "quota" in error_details.lower():
                 raise RuntimeError("API quota exceeded. Please check your OpenAI account billing and usage limits.")
@@ -146,53 +141,7 @@ class OpenAIService:
             logger.error(f"Unexpected error in OpenAI service: {str(e)}")
             raise RuntimeError(f"An unexpected error occurred while processing your request: {str(e)}")
     
-    async def generate_structured_response(self, prompt: str) -> Dict[str, Any]:
-        """
-        Generate a structured response with metadata for enhanced JSON format.
-        
-        Args:
-            prompt: The user's input prompt
-            
-        Returns:
-            Dictionary containing response and metadata
-        """
-        start_time = datetime.now()
-        
-        try:
-            response_text = await self.generate_response(prompt)
-            end_time = datetime.now()
-            processing_time = (end_time - start_time).total_seconds()
-            
-            return {
-                "response": response_text,
-                "metadata": {
-                    "model": self.model,
-                    "processing_time_seconds": round(processing_time, 3),
-                    "timestamp": end_time.isoformat(),
-                    "request_id": f"req_{self.request_count}_{int(end_time.timestamp())}",
-                    "configuration": {
-                        "max_tokens": self.max_tokens,
-                        "temperature": self.temperature,
-                        "top_p": self.top_p
-                    }
-                }
-            }
-        except Exception as e:
-            end_time = datetime.now()
-            processing_time = (end_time - start_time).total_seconds()
-            
-            # Return structured error information
-            return {
-                "error": True,
-                "error_message": str(e),
-                "metadata": {
-                    "model": self.model,
-                    "processing_time_seconds": round(processing_time, 3),
-                    "timestamp": end_time.isoformat(),
-                    "request_id": f"req_{self.request_count}_{int(end_time.timestamp())}"
-                }
-            }
-    
+
     async def validate_api_key(self) -> Dict[str, Any]:
         """
         Validate the API key by making a test request.
@@ -201,7 +150,6 @@ class OpenAIService:
             Dictionary with validation results
         """
         try:
-            # Make a minimal test request
             response = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[{"role": "user", "content": "Hi"}],
@@ -224,7 +172,7 @@ class OpenAIService:
             }
         except Exception as e:
             return {
-                "valid": True,  # Key might be valid but other issues
+                "valid": True,
                 "model_available": False,
                 "model": self.model,
                 "message": f"API key appears valid but model access failed: {str(e)}"

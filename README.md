@@ -1,4 +1,4 @@
-# AI API Integration Backend
+# Workiva AI API Integration Backend
 
 A FastAPI-based backend application that integrates with OpenAI's GPT-3.5-turbo model, providing a RESTful API for AI interactions with conversation logging capabilities.
 
@@ -121,7 +121,7 @@ This project is version-controlled with Git. The repository includes:
 - **POST** `/api/ask-ai` - Send a prompt to the AI and receive a response
 - **GET** `/api/conversations` - Retrieve all past conversations
 - **DELETE** `/api/conversations` - Clear all conversation history
-- **GET** `/api/health` - Check API health status
+- **GET** `/api/health` - Comprehensive health check with detailed system status
 
 ## Testing the API
 
@@ -146,15 +146,29 @@ curl -X DELETE "http://localhost:8000/api/conversations"
 
 #### 4. Health Check
 ```bash
+# Basic health check
 curl -X GET "http://localhost:8000/api/health"
+
+# Health check with API validation
+curl -X GET "http://localhost:8000/api/health?validate_api=true"
 ```
 
 ### Using the Test Script
 
+The test script requires the server to be running. Open two terminals:
+
+**Terminal 1 - Start the server:**
 ```bash
-# Make sure your server is running first
+uvicorn main:app --reload
+```
+
+**Terminal 2 - Run the tests:**
+```bash
+chmod +x test_api.sh
 ./test_api.sh
 ```
+
+The test script will automatically check if the server is running and guide you if it's not.
 
 ## Request/Response Examples
 
@@ -204,6 +218,57 @@ curl -X GET "http://localhost:8000/api/health"
   "deleted_count": 5
 }
 ```
+
+### GET /api/health
+
+**Success Response (200):**
+```json
+{
+  "status": "healthy",
+  "message": "API is operational",
+  "openai_configured": true,
+  "timestamp": "2024-01-15T10:30:45.123456",
+  "details": {
+    "openai_configuration": {
+      "api_key_configured": true,
+      "api_key_format_valid": true,
+      "model": "gpt-3.5-turbo",
+      "max_tokens": 1000,
+      "temperature": 0.7,
+      "timeout": 30.0,
+      "advanced_parameters": {
+        "top_p": 1.0,
+        "frequency_penalty": 0.0,
+        "presence_penalty": 0.0
+      }
+    },
+    "database_status": {
+      "connected": true,
+      "conversation_count": 3,
+      "message": "Database is accessible"
+    },
+    "usage_statistics": {
+      "total_requests": 15,
+      "total_tokens_used": 1250,
+      "average_tokens_per_request": 83.33,
+      "configuration": {
+        "model": "gpt-3.5-turbo",
+        "max_tokens": 1000,
+        "temperature": 0.7,
+        "timeout": 30.0
+      }
+    },
+    "api_validation": null
+  }
+}
+```
+
+**Health Check Features:**
+- **System Status**: Overall health indicator (healthy/degraded)
+- **OpenAI Configuration**: Detailed configuration and API key validation
+- **Database Status**: Connection status and conversation count
+- **Usage Statistics**: Request counts, token usage, and performance metrics
+- **Optional API Validation**: Add `?validate_api=true` to test API key connectivity
 
 ## Error Handling & Validation
 

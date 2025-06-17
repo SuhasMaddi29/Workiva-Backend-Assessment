@@ -1,6 +1,6 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict, Any
 import re
 
 class AskAIRequest(BaseModel):
@@ -12,36 +12,34 @@ class AskAIRequest(BaseModel):
         description="The user's prompt for the AI (1-4000 characters)"
     )
     
-    @validator('prompt')
+    @field_validator('prompt')
+    @classmethod
     def validate_prompt(cls, v):
         """Custom validator for prompt field."""
         if not v:
             raise ValueError("Prompt is required")
         
-        # Check if prompt is only whitespace
         if not v.strip():
             raise ValueError("Prompt cannot be empty or contain only whitespace")
         
-        # Check for minimum meaningful content (at least 2 characters after stripping)
         if len(v.strip()) < 2:
             raise ValueError("Prompt must contain at least 2 meaningful characters")
         
         # Check for potentially harmful content patterns
         harmful_patterns = [
-            r'<script[^>]*>.*?</script>',  # Script tags
-            r'javascript:',  # JavaScript protocol
-            r'data:text/html',  # Data URLs with HTML
+            r'<script[^>]*>.*?</script>',
+            r'javascript:',
+            r'data:text/html',
         ]
         
         for pattern in harmful_patterns:
             if re.search(pattern, v, re.IGNORECASE):
                 raise ValueError("Prompt contains potentially harmful content")
         
-        # Check for excessive repetition (same character repeated more than 50 times)
         if re.search(r'(.)\1{49,}', v):
             raise ValueError("Prompt contains excessive character repetition")
         
-        return v.strip()  # Return cleaned prompt
+        return v.strip()
 
 class AskAIResponse(BaseModel):
     """Response model for the ask-ai endpoint."""
@@ -84,4 +82,6 @@ class HealthResponse(BaseModel):
     """Health check response model."""
     status: str
     message: str
-    openai_configured: bool 
+    openai_configured: bool
+    timestamp: str
+    details: Dict[str, Any]

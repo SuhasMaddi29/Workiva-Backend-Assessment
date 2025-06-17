@@ -86,11 +86,8 @@ async def ask_ai(
             }
         )
     except ValueError as e:
-        # Handle custom validation errors
         error_msg = str(e)
         logger.warning(f"Invalid request: {error_msg}")
-        
-        # Provide specific error codes for different validation failures
         if "empty" in error_msg.lower() or "whitespace" in error_msg.lower():
             error_code = "EMPTY_PROMPT"
         elif "meaningful characters" in error_msg.lower():
@@ -115,8 +112,6 @@ async def ask_ai(
     except RuntimeError as e:
         error_msg = str(e)
         logger.error(f"Runtime error: {error_msg}")
-        
-        # Determine appropriate status code and error details based on error
         if "rate_limit" in error_msg.lower():
             status_code = 429
             error_code = "RATE_LIMIT_EXCEEDED"
@@ -203,10 +198,8 @@ async def health_check(request: Request):
         openai_service = OpenAIService()
         db_service = request.app.state.db_service
         
-        # Get detailed configuration status
         config_status = openai_service.get_configuration_status()
         
-        # Validate API key (optional - only if explicitly requested)
         api_validation = None
         validate_api = request.query_params.get("validate_api", "false").lower() == "true"
         
@@ -220,10 +213,7 @@ async def health_check(request: Request):
                     "message": "API validation failed"
                 }
         
-        # Get usage statistics
         usage_stats = openai_service.get_usage_stats()
-        
-        # Test database connection
         try:
             conversation_count = await db_service.get_conversation_count()
             db_status = {
