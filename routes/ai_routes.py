@@ -88,16 +88,7 @@ async def ask_ai(
     except ValueError as e:
         error_msg = str(e)
         logger.warning(f"Invalid request: {error_msg}")
-        if "empty" in error_msg.lower() or "whitespace" in error_msg.lower():
-            error_code = "EMPTY_PROMPT"
-        elif "meaningful characters" in error_msg.lower():
-            error_code = "INSUFFICIENT_CONTENT"
-        elif "harmful content" in error_msg.lower():
-            error_code = "HARMFUL_CONTENT"
-        elif "repetition" in error_msg.lower():
-            error_code = "EXCESSIVE_REPETITION"
-        else:
-            error_code = "INVALID_INPUT"
+        error_code = get_validation_error_code(error_msg)
         
         raise HTTPException(
             status_code=400,
@@ -112,26 +103,7 @@ async def ask_ai(
     except RuntimeError as e:
         error_msg = str(e)
         logger.error(f"Runtime error: {error_msg}")
-        if "rate_limit" in error_msg.lower():
-            status_code = 429
-            error_code = "RATE_LIMIT_EXCEEDED"
-            suggestions = ["Wait a few minutes before trying again", "Consider upgrading your OpenAI plan"]
-        elif "quota" in error_msg.lower():
-            status_code = 429
-            error_code = "QUOTA_EXCEEDED"
-            suggestions = ["Check your OpenAI account billing", "Add credits to your OpenAI account"]
-        elif "timeout" in error_msg.lower():
-            status_code = 504
-            error_code = "REQUEST_TIMEOUT"
-            suggestions = ["Try again with a shorter prompt", "Check your internet connection"]
-        elif "api key" in error_msg.lower() or "invalid" in error_msg.lower():
-            status_code = 401
-            error_code = "INVALID_API_KEY"
-            suggestions = ["Check your OpenAI API key", "Ensure the API key has proper permissions"]
-        else:
-            status_code = 503
-            error_code = "AI_SERVICE_ERROR"
-            suggestions = ["Try again in a few moments", "Contact support if the issue persists"]
+        status_code, error_code, suggestions = get_runtime_error_details(error_msg)
         
         raise HTTPException(
             status_code=status_code,
@@ -155,6 +127,36 @@ async def ask_ai(
                 "timestamp": datetime.now().isoformat()
             }
         )
+
+def get_validation_error_code(error_msg: str) -> str:
+    """Determine validation error code based on error message."""
+    error_msg_lower = error_msg.lower()
+    
+    if "empty" in error_msg_lower or "whitespace" in error_msg_lower:
+        return "EMPTY_PROMPT"
+    elif "meaningful characters" in error_msg_lower:
+        return "INSUFFICIENT_CONTENT"
+    elif "harmful content" in error_msg_lower:
+        return "HARMFUL_CONTENT"
+    elif "repetition" in error_msg_lower:
+        return "EXCESSIVE_REPETITION"
+    else:
+        return "INVALID_INPUT"
+
+def get_runtime_error_details(error_msg: str) -> tuple[int, str, list[str]]:
+    """Determine status code, error code, and suggestions based on runtime error message."""
+    error_msg_lower = error_msg.lower()
+    
+    if "rate_limit" in error_msg_lower:
+        return 429, "RATE_LIMIT_EXCEEDED", ["Wait a few minutes before trying again", "Consider upgrading your OpenAI plan"]
+    elif "quota" in error_msg_lower:
+        return 429, "QUOTA_EXCEEDED", ["Check your OpenAI account billing", "Add credits to your OpenAI account"]
+    elif "timeout" in error_msg_lower:
+        return 504, "REQUEST_TIMEOUT", ["Try again with a shorter prompt", "Check your internet connection"]
+    elif "api key" in error_msg_lower or "invalid" in error_msg_lower:
+        return 401, "INVALID_API_KEY", ["Check your OpenAI API key", "Ensure the API key has proper permissions"]
+    else:
+        return 503, "AI_SERVICE_ERROR", ["Try again in a few moments", "Contact support if the issue persists"]
 
 def get_validation_suggestions(error_code: str) -> list:
     """Get helpful suggestions based on validation error code."""

@@ -121,46 +121,8 @@ class OpenAIService:
             logger.info(f"Successfully received response from OpenAI API (length: {len(ai_response)})")
             return ai_response.strip()
             
-        except AuthenticationError as e:
-            logger.error(f"OpenAI authentication error: {str(e)}")
-            raise RuntimeError("Invalid API key or authentication failed. Please check your OpenAI API key.")
-        
-        except RateLimitError as e:
-            logger.error(f"OpenAI rate limit error: {str(e)}")
-            error_details = str(e)
-            if "quota" in error_details.lower():
-                raise RuntimeError("API quota exceeded. Please check your OpenAI account billing and usage limits.")
-            else:
-                raise RuntimeError("Rate limit exceeded. Please wait a moment before trying again.")
-        
-        except APITimeoutError as e:
-            logger.error(f"OpenAI API timeout: {str(e)}")
-            raise RuntimeError("AI service request timed out. Please try again with a shorter prompt.")
-        
-        except APIConnectionError as e:
-            logger.error(f"OpenAI API connection error: {str(e)}")
-            raise RuntimeError("Unable to connect to AI service. Please check your internet connection and try again.")
-        
-        except OpenAIError as e:
-            logger.error(f"OpenAI API error: {str(e)}")
-            error_msg = str(e).lower()
-            
-            if "model" in error_msg and "not found" in error_msg:
-                raise RuntimeError(f"The specified model '{self.model}' is not available. Please check your model configuration.")
-            elif "content_filter" in error_msg:
-                raise RuntimeError("Your prompt was filtered due to content policy. Please rephrase your request.")
-            elif "context_length" in error_msg:
-                raise RuntimeError("Your prompt is too long for the selected model. Please shorten your prompt.")
-            else:
-                raise RuntimeError(f"AI service error: {str(e)}")
-        
-        except asyncio.TimeoutError:
-            logger.error("Request timed out")
-            raise RuntimeError("Request timed out. Please try again.")
-        
         except Exception as e:
-            logger.error(f"Unexpected error in OpenAI service: {str(e)}")
-            raise RuntimeError(f"An unexpected error occurred while processing your request: {str(e)}")
+            raise self._handle_openai_exception(e)
     
 
     async def validate_api_key(self) -> Dict[str, Any]:
@@ -246,4 +208,47 @@ class OpenAIService:
                 "frequency_penalty": self.frequency_penalty,
                 "presence_penalty": self.presence_penalty
             }
-        } 
+        }
+    
+    def _handle_openai_exception(self, e: Exception) -> RuntimeError:
+        """Handle OpenAI exceptions and convert to RuntimeError with appropriate messages."""
+        if isinstance(e, AuthenticationError):
+            logger.error(f"OpenAI authentication error: {str(e)}")
+            return RuntimeError("Invalid API key or authentication failed. Please check your OpenAI API key.")
+        
+        elif isinstance(e, RateLimitError):
+            logger.error(f"OpenAI rate limit error: {str(e)}")
+            error_details = str(e)
+            if "quota" in error_details.lower():
+                return RuntimeError("API quota exceeded. Please check your OpenAI account billing and usage limits.")
+            else:
+                return RuntimeError("Rate limit exceeded. Please wait a moment before trying again.")
+        
+        elif isinstance(e, APITimeoutError):
+            logger.error(f"OpenAI API timeout: {str(e)}")
+            return RuntimeError("AI service request timed out. Please try again with a shorter prompt.")
+        
+        elif isinstance(e, APIConnectionError):
+            logger.error(f"OpenAI API connection error: {str(e)}")
+            return RuntimeError("Unable to connect to AI service. Please check your internet connection and try again.")
+        
+        elif isinstance(e, OpenAIError):
+            logger.error(f"OpenAI API error: {str(e)}")
+            error_msg = str(e).lower()
+            
+            if "model" in error_msg and "not found" in error_msg:
+                return RuntimeError(f"The specified model '{self.model}' is not available. Please check your model configuration.")
+            elif "content_filter" in error_msg:
+                return RuntimeError("Your prompt was filtered due to content policy. Please rephrase your request.")
+            elif "context_length" in error_msg:
+                return RuntimeError("Your prompt is too long for the selected model. Please shorten your prompt.")
+            else:
+                return RuntimeError(f"AI service error: {str(e)}")
+        
+        elif isinstance(e, asyncio.TimeoutError):
+            logger.error("Request timed out")
+            return RuntimeError("Request timed out. Please try again.")
+        
+        else:
+            logger.error(f"Unexpected error in OpenAI service: {str(e)}")
+            return RuntimeError(f"An unexpected error occurred while processing your request: {str(e)}")

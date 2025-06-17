@@ -174,15 +174,14 @@ The test script will automatically check if the server is running and guide you 
 
 For a more comprehensive testing experience, import the Workiva AI API Backend Postman collection:
 
-1. **Get Collection**: Visit [Postman Collection](https://api.postman.com/collections/34473097-63c44779-ace5-4006-84a0-0942fd7776de?access_key=PMAT-01JXZPBZQA5XYQ5H9R5JSZP0NE)
-2. **Copy Collection**: Copy the entire JSON content from the webpage
-3. **Import to Postman**: 
-   - Open Postman → Import → Raw text
-   - Paste the copied JSON content
-   - Click "Continue" then "Import"
-4. **Set Base URL**: The collection defaults to `http://localhost:8000` (modify if needed)
-5. **Start Server**: Ensure your server is running with `uvicorn main:app --reload`
-6. **Run Tests**: Execute individual requests or run the entire collection
+1. **Get Collection**: Visit [Workiva AI API Backend Collection](https://elements.getpostman.com/redirect?entityId=34473097-63c44779-ace5-4006-84a0-0942fd7776de&entityType=collection)
+2. **Import to Postman**: 
+   - Click the link above - it will automatically redirect to Postman
+   - If prompted, click "Open Postman" or copy the collection JSON and import manually
+   - The collection will be imported directly into your Postman workspace
+3. **Set Base URL**: The collection defaults to `http://localhost:8000` (modify if needed)
+4. **Start Server**: Ensure your server is running with `uvicorn main:app --reload`
+5. **Run Tests**: Execute individual requests or run the entire collection
 
 **Collection Features:**
 - **Organized by Category**: AI endpoints, conversation management, health checks
